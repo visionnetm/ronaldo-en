@@ -1,0 +1,155 @@
+<!-- CONTACT SECTION: paste into your page where appropriate -->
+<section id="contact" style="max-width:920px;margin:28px auto;padding:22px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.04);font-family:Arial,Helvetica,sans-serif;">
+  <h2 style="margin-top:0;color:#1d3557;">Contact</h2>
+  <p style="color:#444;line-height:1.5;">
+    If you have questions, corrections or partnership inquiries, please use the form below — we'll respond as soon as possible.
+  </p>
+
+  <form id="contactForm" novalidate>
+    <!-- Honeypot (invisible to humans) -->
+    <div style="display:none">
+      <label>Leave this field empty: <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;">
+      <div style="flex:1;min-width:220px;">
+        <label style="display:block;font-weight:600;margin-bottom:6px;color:#333;">Name *</label>
+        <input id="c_name" name="name" type="text" required
+               style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+      </div>
+
+      <div style="flex:1;min-width:220px;">
+        <label style="display:block;font-weight:600;margin-bottom:6px;color:#333;">Email *</label>
+        <input id="c_email" name="email" type="email" required
+               style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#333;">Subject</label>
+      <input id="c_subject" name="subject" type="text"
+             style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+    </div>
+
+    <div style="margin-top:12px;">
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#333;">Message *</label>
+      <textarea id="c_message" name="message" rows="7" required
+                style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;line-height:1.5;"></textarea>
+    </div>
+
+    <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <button id="c_send" type="submit"
+              style="background:#1d3557;color:#fff;padding:10px 16px;border-radius:8px;border:0;cursor:pointer;font-weight:700;">
+        Send Message
+      </button>
+
+      <button id="c_send_mailto" type="button"
+              style="background:#fff;color:#1d3557;padding:10px 14px;border-radius:8px;border:1px solid #1d3557;cursor:pointer;font-weight:600;">
+        Open Email App (fallback)
+      </button>
+
+      <div id="c_status" role="status" aria-live="polite" style="color:#1d3557;font-weight:600;"></div>
+    </div>
+
+    <p style="margin-top:12px;color:#666;font-size:13px;">We will use your email only to reply. See our <a href="/privacy.html">Privacy Policy</a>.</p>
+  </form>
+
+  <script>
+    (function(){
+      const form = document.getElementById('contactForm');
+      const status = document.getElementById('c_status');
+      const btn = document.getElementById('c_send');
+      const mailBtn = document.getElementById('c_send_mailto');
+
+      // --- CONFIG: set your Formspree endpoint here (or leave empty to skip) ---
+      // Sign up at https://formspree.io and get an endpoint like: https://formspree.io/f/yourID
+      const FORMSPREE_ENDPOINT = ''; // <-- put your Formspree endpoint URL here, e.g. 'https://formspree.io/f/abcdefg'
+
+      // small helper validation
+      function validate() {
+        const name = document.getElementById('c_name').value.trim();
+        const email = document.getElementById('c_email').value.trim();
+        const message = document.getElementById('c_message').value.trim();
+        if (!name || !email || !message) {
+          status.style.color = '#c0392b';
+          status.textContent = 'Please fill in name, email and message.';
+          return false;
+        }
+        // simple email regex
+        const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+        if (!re.test(email)) {
+          status.style.color = '#c0392b';
+          status.textContent = 'Please enter a valid email address.';
+          return false;
+        }
+        status.textContent = '';
+        return true;
+      }
+
+      // Form submit handler (tries Formspree via fetch, otherwise shows instructions)
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        if (!validate()) return;
+
+        // honeypot
+        const honeypot = form.querySelector('input[name=\"website\"]').value;
+        if (honeypot) {
+          // likely bot
+          status.style.color = '#c0392b';
+          status.textContent = 'Spam detected.';
+          return;
+        }
+
+        const data = {
+          name: document.getElementById('c_name').value.trim(),
+          email: document.getElementById('c_email').value.trim(),
+          subject: document.getElementById('c_subject').value.trim(),
+          message: document.getElementById('c_message').value.trim()
+        };
+
+        // If FORMSPREE_ENDPOINT is set, POST via fetch
+        if (FORMSPREE_ENDPOINT) {
+          btn.disabled = true;
+          status.style.color = '#1d3557';
+          status.textContent = 'Sending...';
+
+          fetch(FORMSPREE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          })
+          .then(res => res.ok ? res.json() : Promise.reject(res))
+          .then(() => {
+            status.style.color = 'green';
+            status.textContent = 'Message sent. Thank you!';
+            form.reset();
+            btn.disabled = false;
+          })
+          .catch(err => {
+            console.error(err);
+            status.style.color = '#c0392b';
+            status.textContent = 'Sending failed. Try the email button as fallback.';
+            btn.disabled = false;
+          });
+          return;
+        }
+
+        // If no Formspree endpoint, fallback to mailto with populated subject/body (opens mail client)
+        const subject = encodeURIComponent((data.subject || 'Contact from website') + ' — ' + data.name);
+        const body = encodeURIComponent('Name: ' + data.name + '\\nEmail: ' + data.email + '\\n\\n' + data.message);
+        // Using mailto: fallback
+        window.location.href = `mailto:example@gmail.com?subject=${subject}&body=${body}`;
+      });
+
+      // mailto fallback button (opens mail client with prefilled content)
+      mailBtn.addEventListener('click', function(){
+        if (!validate()) return;
+        const name = document.getElementById('c_name').value.trim();
+        const email = document.getElementById('c_email').value.trim();
+        const subject = encodeURIComponent((document.getElementById('c_subject').value || 'Contact from website') + ' — ' + name);
+        const body = encodeURIComponent('Name: ' + name + '\\nEmail: ' + email + '\\n\\n' + document.getElementById('c_message').value.trim());
+        window.location.href = `mailto:example@gmail.com?subject=${subject}&body=${body}`;
+      });
+    })();
+  </script>
+</section>
